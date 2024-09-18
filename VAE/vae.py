@@ -6,6 +6,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
+
 class VAE(nn.Module):
     def __init__(self):
         super(VAE, self).__init__()
@@ -66,6 +67,15 @@ def loss_function(recon_x, x, mu, logvar):
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
 
+
+def load_model(model, optimizer, load_path):
+    checkpoint = torch.load(load_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    epoch = checkpoint['epoch']
+    return model, optimizer, epoch
+
+
 if __name__ == "__main__":
     # Initialize model and optimizer
     # Set random seed for reproducibility
@@ -80,7 +90,7 @@ if __name__ == "__main__":
     train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    model = VAE().to('cuda')
+    model = VAE()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     OPTION = 'eval'
@@ -124,22 +134,6 @@ if __name__ == "__main__":
         print(f"Model saved to {save_path}")
     else:
         model.eval()
-        def load_model(model, optimizer, load_path):
-            checkpoint = torch.load(load_path)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            epoch = checkpoint['epoch']
-            return model, optimizer, epoch
-
-        def save_generated_image(image, filename):
-            plt.figure(figsize=(5, 5))
-            plt.imshow(image, cmap='gray')
-            plt.axis('off')
-            plt.tight_layout()
-            plt.savefig(filename, dpi=300, bbox_inches='tight')
-            plt.close()
-            print(f"Image saved as {filename}")
-
         model, optimizer, epoch = load_model(model, optimizer, 'vae_mnist_model.pth')
 
         with torch.no_grad():
