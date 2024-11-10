@@ -3,7 +3,7 @@
 #SBATCH --job-name=GPU-mpi
 #SBATCH --mem=10G
 #SBATCH --partition=rtx6000
-#SBATCH --qos=normal
+#SBATCH --qos=m
 #SBATCH --output=logs/%x.%j.log
 #SBATCH --nodes=2
 #SBATCH --gres=gpu:2
