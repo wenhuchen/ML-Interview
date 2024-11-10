@@ -73,23 +73,23 @@ def run_training(rank, world_size):
     setup(rank, world_size)
 
     # Create model
-    model = TwoLayerMLP(784, 128, 16, world_size).to(rank)
+    model = TwoLayerMLP(784, 128, 16, world_size).to('cuda')
 
     # Define loss function and optimizer
-    loss_fn = nn.CrossEntropyLoss().to(rank)
+    loss_fn = nn.CrossEntropyLoss().to('cuda')
     optimizer = optim.SGD(model.parameters(), lr=0.1)
 
     # Simulating a dataset (input starts on GPU 0)
     if rank == 0:
-        input_tensor = torch.randn(64, 784).to(rank)
+        input_tensor = torch.randn(64, 784).to('cuda')
     else:
-        input_tensor = torch.zeros(64, 784).to(rank)
+        input_tensor = torch.zeros(64, 784).to('cuda')
     dist.broadcast(input_tensor, 0)
 
     if rank == 0:
-        target = torch.randint(0, 16, (64,)).to(0)
+        target = torch.randint(0, 16, (64,)).to('cuda')
     else:
-        target = torch.zeros(64, dtype=torch.long).to(rank)
+        target = torch.zeros(64, dtype=torch.long).to('cuda')
     dist.broadcast(target, 0)
 
 
@@ -129,4 +129,8 @@ def run_training(rank, world_size):
 
 if __name__ == "__main__":
     world_size = 4  # Adjust this to any number of GPUs available
-    mp.spawn(run_training, args=(world_size,), nprocs=world_size, join=True)
+    mp.spawn(
+        run_training, 
+        args=(world_size,), 
+        nprocs=world_size, 
+        join=True)

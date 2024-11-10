@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.distributed as dist
 import os
+import torch.multiprocessing as mp
 
 class TwoLayerMLP(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -29,9 +30,9 @@ def run_training(rank, world_size):
     # Create model and split it across two GPUs
     model = TwoLayerMLP(784, 128, 10)
     if rank == 0:
-        model.layer1.to(rank)
+        model.layer1.to('cuda')
     elif rank == 1:
-        model.layer2.to(rank)
+        model.layer2.to('cuda')
 
     # Define loss function and optimizer
     loss_fn = nn.CrossEntropyLoss().to(rank)
@@ -75,4 +76,8 @@ def run_training(rank, world_size):
 
 if __name__ == "__main__":
     world_size = 2
-    torch.multiprocessing.spawn(run_training, args=(world_size,), nprocs=world_size, join=True)
+    mp.spawn(
+        run_training, 
+        args=(world_size,), 
+        nprocs=world_size, 
+        join=True)
