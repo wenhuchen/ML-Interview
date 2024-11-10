@@ -130,7 +130,7 @@ def run_training(rank, world_size):
 if __name__ == "__main__":
     world_size = 4  # Adjust this to any number of GPUs available
     mp.spawn(
-        run_training, 
-        args=(world_size,), 
-        nprocs=world_size, 
+        run_training,
+        args=(world_size,),
+        nprocs=world_size,
         join=True)
