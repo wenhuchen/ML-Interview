@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=GPU-torchrun
+#SBATCH --job-name=Torchrun-CNN
 #SBATCH --mem=10G
 #SBATCH --partition=rtx6000
 #SBATCH --qos=m
@@ -15,13 +15,15 @@ export MASTER_NODE=`scontrol show hostnames $SLURM_JOB_NODELIST | head -n1`
 
 # Set PyTorch distributed related variables
 export NCCL_DEBUG=INFO
-export NCCL_SOCKET_IFNAME=eth0  # Change to your network interface, e.g., "ens3", "bond0"
+# export NCCL_SOCKET_IFNAME=eth0  # Change to your network interface, e.g., "ens3", "bond0"
 export NCCL_IB_DISABLE=1        # Disable InfiniBand if you don't use it
 export NCCL_NET_GDR_LEVEL=0     # Disable GPU Direct RDMA
 
 # Setting the master info
 export MASTER_ADDR=$MASTER_NODE
 export MASTER_PORT=29504
+
+srun nvidia-smi topo -m
 
 echo "--------------------------------- Running with Torch Run on $SLURM_NNODES nodes"
 srun torchrun \
@@ -31,4 +33,4 @@ srun torchrun \
     --rdzv_backend=c10d \
     --rdzv_endpoint=$MASTER_ADDR:$MASTER_PORT \
     --max_restarts=3 \
-    run_with_torchrun.py
+    train.py
