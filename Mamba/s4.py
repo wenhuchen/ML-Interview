@@ -1,12 +1,14 @@
 import numpy as np
 from scipy import linalg
+np.set_printoptions(precision=3, suppress=True)  # Set precision and suppress scientific notation
 
 class S4:
     def __init__(self):
         # Initialize dimensions
-        self.N = 64  # State dimension
+        self.N = 4  # State dimension
+        self.input_dim = 2
         self.dt = 0.01  # Discretization step size
-        self.d_model = 16  # Output dimension
+        self.d_model = 6  # Output dimension
         
         # Create state space matrices
         self.A = self._hippo_matrix()
@@ -16,7 +18,7 @@ class S4:
         # Discretize the system
         self.Ad = self._discretize()
         self.Bd = self._discretize_B()
-        
+
     def _hippo_matrix(self):
         """
         Construct HiPPO-LegS matrix of size N x N.
@@ -34,8 +36,7 @@ class S4:
                 elif k == j:
                     A[k, j] = k + 1
                 else:
-                    A[k, j] = -np.sqrt((2*k + 1)*(2*j + 1))
-                    
+                    A[k, j] = -np.sqrt((2*k + 1)*(2*j + 1))   
         return A
         
     def _discretize(self):
@@ -53,13 +54,13 @@ class S4:
     def _init_B(self):
         """
         Initialize the input matrix B.
-        For S4, B is typically chosen as a random vector.
+        For S4, B is typically chosen as a random matrix.
         """
-        
-        # Initialize B as a random normal vector
-        B = np.random.randn(self.N, 1)
-        # Scale the norm to 1
-        B = B / np.sqrt(np.sum(B**2))
+        # Initialize B as a random normal matrix with shape (N, input_dim)
+        B = np.random.randn(self.N, self.input_dim)
+        # Scale each column to have unit norm
+        for i in range(self.input_dim):
+            B[:, i] = B[:, i] / np.sqrt(np.sum(B[:, i]**2))
         return B
         
     def _init_C(self):
@@ -109,19 +110,50 @@ class S4:
         for i in range(L):
             # Compute output: y[k] = Cx[k]
             y[i] = x @ self.C.T
-            
             # Update state: x[k+1] = Adx[k] + Bdu[k]
             x = x @ self.Ad.T + u[i] @ self.Bd.T
             
         return y
-        
+
+    def forward_conv(self, u, x0=None):
+        """
+        Convolution-based forward pass through the S4 system using FFT.
+        More efficient for longer sequences.
+        """
+        L, batch_size, _ = u.shape
+
+        # Initialize state
+        if x0 is None:
+            x = np.zeros((batch_size, self.N))
+        else:
+            x = x0
+
+        kernels = np.zeros((L, self.d_model, self.input_dim))
+        tmp = None
+        for i in range(L):
+            if i == 0:
+                tmp = self.C
+                kernels[i] = tmp @ self.Bd
+            else:
+                tmp = tmp @ self.Ad
+                kernels[i] = tmp @ self.Bd
+
+        y = np.zeros((L, batch_size, self.d_model))
+        #for i in range(batch_size):
+        for j in range(L):
+            for k in range(j):
+                y[j] += u[k] @ kernels[j - k].T
+        return y
+
 
 def main():
     s4 = S4()
-    u = np.random.randn(100, 1, 1)
+    u = np.random.randn(20, 1, s4.input_dim)
     y = s4.forward(u)
     print(y)
-    print(y.shape)
+
+    y = s4.forward_conv(u)
+    print(y)
 
 if __name__ == "__main__":
     main()
