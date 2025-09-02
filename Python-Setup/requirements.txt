@@ -1,0 +1,7 @@
+# Core dependencies
+# No external dependencies for this simple example
+
+# Development dependencies (optional)
+# pytest>=6.0
+# black>=21.0
+# flake8>=3.8
