@@ -1,0 +1,51 @@
+FROM verlai/verl:ngc-th2.6.0-cu126-vllm0.8.2-mcore0.11.0
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file into the container at /app
+ENV http_proxy="http://pac-internal.xaminim.com:3129"
+ENV https_proxy="http://pac-internal.xaminim.com:3129"
+ENV ftp_proxy="http://pac-internal.xaminim.com:3129"
+ENV no_proxy="localhost,127.0.0.1,*.xaminim.com,10.0.0.0/8"
+
+# Install system dependencies including build tools and sentencepiece headers
+RUN apt-get update && apt-get install -y \
+    vim \
+    tmux \
+    wget \
+    git \
+    build-essential \
+    cmake \
+    ninja-build \
+    pkg-config \
+    libsentencepiece-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root
+
+RUN wget https://raw.githubusercontent.com/wenhuchen/setting_files/refs/heads/master/.tmux.conf
+RUN echo "alias l='ls -lhtrG'" >> .bashrc
+
+RUN python -m pip install --upgrade pip
+
+WORKDIR /workspace
+
+RUN rm -- =*
+
+RUN pip install "transformers==4.54.0"
+RUN pip install "vllm==0.8.5"
+RUN pip install "flashinfer-python"
+RUN pip install "megatron-core"
+RUN pip install --no-build-isolation "transformer-engine[pytorch]"
+
+RUN pip uninstall -y ray
+RUN pip uninstall -y ray-dashboard  # If previously installed separately
+RUN pip install "ray[default]==2.43.0"
+
+RUN pip uninstall -y "pynvml"
+# Address the the numpy 1 and numpy 2 compatiability issue
+RUN pip uninstall -y pyarrow pandas numpy
+RUN pip install numpy==1.26.4 pandas==2.2.3 pyarrow==15.0.2
+
+CMD ["bash"]

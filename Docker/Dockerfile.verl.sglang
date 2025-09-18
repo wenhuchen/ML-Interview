@@ -1,0 +1,56 @@
+FROM lmsysorg/sglang:v0.4.9.post3-cu126
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file into the container at /app
+ENV http_proxy="http://pac-internal.xaminim.com:3129"
+ENV https_proxy="http://pac-internal.xaminim.com:3129"
+ENV ftp_proxy="http://pac-internal.xaminim.com:3129"
+ENV no_proxy="localhost,127.0.0.1,*.xaminim.com,10.0.0.0/8"
+
+# Install system dependencies including build tools and sentencepiece headers
+RUN apt-get clean && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    vim \
+    tmux \
+    wget \
+    git \
+    build-essential \
+    cmake \
+    ninja-build \
+    pkg-config \
+    libsentencepiece-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/*
+
+WORKDIR /root
+
+RUN rm .tmux.conf || true
+RUN wget https://raw.githubusercontent.com/wenhuchen/setting_files/refs/heads/master/.tmux.conf
+RUN echo "alias l='ls -lhtrG'" >> .bashrc
+
+RUN python -m pip install --upgrade pip
+
+WORKDIR /workspace
+
+# Install Python packages in a single layer to reduce image size
+RUN pip install --no-cache-dir \
+    "megatron-core" \
+    "transformer-engine[pytorch]" \
+    && pip install --no-cache-dir "ray[default]==2.43.0" \
+    && pip uninstall -y pynvml pyarrow pandas numpy \
+    && pip install --no-cache-dir numpy==1.26.4 pandas==2.2.3 pyarrow==15.0.2 \
+    && pip install flash-attn
+
+RUN pip install --no-cache-dir \
+    tensordict \
+    omegaconf \
+    hydra-core \
+    torchdata \
+    codetiming \
+    peft
+
+CMD ["bash"]
