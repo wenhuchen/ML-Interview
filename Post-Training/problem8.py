@@ -34,9 +34,9 @@ corpus = [
     
     # Slightly modified
     "The early bird catches many worm.",
-
-    "The quick question cannot catch the right question."
-
+    
+    "The quick question cannot catch the right question.",
+    
     "The quick question catches a human in the worm."
 ]
 

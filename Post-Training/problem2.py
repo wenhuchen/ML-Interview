@@ -7,6 +7,7 @@ any external libraries like transformers, huggingface, or PyTorch.
 
 import re
 from collections import Counter, defaultdict
+import token
 from typing import Any, List, Dict, Tuple, final
 
 
@@ -19,6 +20,7 @@ class BPETokenizer:
         self.merges = []  # List of merge operations
         self.merges_lookup = {}  # Map from pair to merge priority (lower = earlier merge)
         self.vocab = {}  # Map from token to index
+        self.inv_vocab = {}
         
     def get_word_freqs(self, corpus: List[str]) -> Dict[str, int]:
         """Count word frequencies in the corpus"""
@@ -113,7 +115,7 @@ class BPETokenizer:
         
         # Create vocabulary mapping
         self.vocab = {token: idx for idx, token in enumerate(sorted(final_vocab))}
-        
+        self.inv_vocab = {idx: token for token, idx in self.vocab.items()}
         # Create lookup table for O(1) pair lookup
         self.merges_lookup = {pair: idx for idx, pair in enumerate(self.merges)}
 
@@ -184,12 +186,20 @@ class BPETokenizer:
     def decode(self, token_ids: List[int]) -> str:
         """Decode token IDs back to text"""
         # Reverse vocabulary lookup
-        reverse_vocab = {idx: token for token, idx in self.vocab.items()}
-        
-        tokens = [reverse_vocab.get(idx, '') for idx in token_ids]
+        token_ids = [idx for idx in token_ids if idx != self.vocab['<pad>']]
+        tokens = [self.inv_vocab[idx] for idx in token_ids]
         # Join tokens and remove end-of-word markers
         text = ''.join(tokens).replace('</w>', ' ')
         return text.strip()
+
+    def expand_vocab(self, new_tokens: List[str]):
+        """Expand the vocabulary with new tokens"""
+        for token in new_tokens:
+            self.vocab[token] = len(self.vocab)
+            self.inv_vocab[len(self.vocab) - 1] = token
+            self.vocab_size += 1
+        
+        print('Expanded vocabulary to size ', len(self.vocab))
 
 
 def example_usage():

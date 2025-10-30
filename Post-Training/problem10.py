@@ -31,7 +31,7 @@ class HuggingFaceTransformer(nn.Module):
         
         # Create GPT-2 configuration
         config = GPT2Config(
-            vocab_size=vocab + 1,  # +1 for EOS token
+            vocab_size=vocab,  # +1 for EOS token
             n_positions=max_length,
             n_ctx=max_length,
             n_embd=dim,
@@ -51,7 +51,7 @@ class HuggingFaceTransformer(nn.Module):
         
         # Create a simple tokenizer-like mapping for our integer tokens
         self.token_to_id = {i: i for i in range(vocab)}
-        self.token_to_id['<|endoftext|>'] = vocab
+        self.token_to_id['<|endoftext|>'] = vocab - 1
         self.id_to_token = {v: k for k, v in self.token_to_id.items()}
     
     def forward(self, input_ids: torch.Tensor):

@@ -1,10 +1,10 @@
 """
-Problem 5: Add rotary/sinusoidal-style positional encoding to a causal
+Problem 4: Add rotary/sinusoidal-style positional encoding to a causal
 Transformer and implement both greedy and temperature-based stochastic sampling
 for next-token generation on a toy sequence task.
 """
 
-from problem4 import Attention, generate_train_sequence
+from problem3 import *
 from torch import nn
 import math
 import torch

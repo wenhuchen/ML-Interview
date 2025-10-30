@@ -1,11 +1,11 @@
 """
-Problem 5.1: Refactor the Transformer with pre-norm attention blocks, dropout,
+Problem 5: Refactor the Transformer with pre-norm attention blocks, dropout,
 and Rotary Position Embeddings (RoPE). Add enhanced sampling (temperature,
 top-k, top-p) and a training loop using AdamW, cosine LR scheduling, and
 gradient clipping.
 """
 
-from problem4 import generate_train_sequence
+from problem3 import *
 from torch import nn
 import torch
 import torch.nn.functional as F
@@ -41,12 +41,10 @@ class Attention(nn.Module):
         
         self.dropout = nn.Dropout(dropout)
         
-    def forward(self, x: torch.Tensor):
-        batch_size, length, dim = x.shape
-        
+    def forward(self, x: torch.Tensor, seq_mask: torch.Tensor = None):        
         # Pre-norm attention
         normed_x = self.norm1(x)
-        attn_out = self._attention(normed_x)
+        attn_out = self._attention(normed_x, seq_mask=seq_mask)
         x = x + self.dropout(attn_out)
         
         # Pre-norm MLP
@@ -56,7 +54,7 @@ class Attention(nn.Module):
         
         return x
     
-    def _attention(self, x: torch.Tensor):
+    def _attention(self, x: torch.Tensor, seq_mask: torch.Tensor = None):
         batch_size, length, dim = x.shape
         
         q = self.q_proj(x)
@@ -73,7 +71,12 @@ class Attention(nn.Module):
         
         # Apply causal mask
         mask = torch.triu(torch.ones((length, length), device=x.device), diagonal=1).bool()
-        scores = scores.masked_fill(mask, float('-inf'))
+        if seq_mask is not None:
+            mask = mask.unsqueeze(0) | seq_mask.unsqueeze(1)
+        else:
+            mask = mask.unsqueeze(0)
+        # Mask: [None, seq_len, seq_len]
+        scores = scores.masked_fill(mask.unsqueeze(1), -10000)
         
         # Apply softmax and dropout
         attn_weights = F.softmax(scores, dim=-1)
@@ -95,11 +98,11 @@ class Transformer(nn.Module):
         self.vocab = vocab
         self.dim = dim
         self.max_length = max_length
-        self.eos = vocab
+        self.eos = vocab - 1
         self.use_rope = use_rope
         
         # Token embedding
-        self.embed = nn.Embedding(vocab + 1, dim)
+        self.embed = nn.Embedding(vocab, dim)
         
         # Positional encoding
         if use_rope:
@@ -114,13 +117,10 @@ class Transformer(nn.Module):
         
         # Final layer norm and projection
         self.final_norm = nn.LayerNorm(dim)
-        self.vocab_proj = nn.Linear(dim, vocab + 1)
+        self.vocab_proj = nn.Linear(dim, vocab)
         
         # Dropout
         self.dropout = nn.Dropout(dropout)
-        
-        # Initialize weights
-        self._init_weights()
     
     def _init_rope(self):
         """Initialize Rotary Position Embedding (RoPE)"""
@@ -147,8 +147,8 @@ class Transformer(nn.Module):
         x_odd = x[..., 1::2]
         
         # Rotate
-        x_rotated_even = x_even * cos - x_odd * sin
-        x_rotated_odd = x_even * sin + x_odd * cos
+        x_rotated_even = x_even * cos.unsqueeze(0) - x_odd * sin.unsqueeze(0)
+        x_rotated_odd = x_even * sin.unsqueeze(0) + x_odd * cos.unsqueeze(0)
         
         # Interleave back
         x_rotated = torch.zeros_like(x)
@@ -157,22 +157,10 @@ class Transformer(nn.Module):
         
         return x_rotated
     
-    def _init_weights(self):
-        """Initialize model weights"""
-        for module in self.modules():
-            if isinstance(module, nn.Linear):
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-                if module.bias is not None:
-                    torch.nn.init.zeros_(module.bias)
-            elif isinstance(module, nn.Embedding):
-                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            elif isinstance(module, nn.LayerNorm):
-                torch.nn.init.zeros_(module.bias)
-                torch.nn.init.ones_(module.weight)
-    
-    def forward(self, x: torch.Tensor):
-        batch_size, length = x.shape
-        
+    def forward(self, x: torch.Tensor, project: bool = True):
+        _, length = x.shape
+        seq_mask = (x == self.eos)
+
         # Token embedding
         x = self.embed(x)
         
@@ -181,18 +169,19 @@ class Transformer(nn.Module):
         
         # Apply dropout
         x = self.dropout(x)
-        
+
         # Pass through transformer layers
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x, seq_mask=seq_mask)
         
         # Final layer norm
         x = self.final_norm(x)
         
-        # Project to vocabulary
-        logits = self.vocab_proj(x)
-        
-        return logits
+        if project:
+            # Project to vocabulary
+            return self.vocab_proj(x)
+        else:
+            return x
     
     def sample(self, x: torch.Tensor, max_new_tokens: int = None, 
                temperature: float = 1.0, top_k: int = None, top_p: float = None,

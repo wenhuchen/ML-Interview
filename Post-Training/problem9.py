@@ -14,12 +14,12 @@ def train_data_generator(config: dict):
 	batch_size: int = config['batch_size']
 	vocab: int = config['vocab']
 	length: int = config['length']
-	inputs = torch.randint(0, vocab, (batch_size, length))
+	inputs = torch.randint(0, vocab - 1, (batch_size, length))
 	target_ = torch.max(inputs, -1).values
 	target = torch.cat(
 		[
 			target_[:, None], 
-			torch.ones_like(target_[:, None]) * vocab
+			torch.ones_like(target_[:, None]) * (vocab - 1)
 		], -1)
 	return (inputs, target)
 
