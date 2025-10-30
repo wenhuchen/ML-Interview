@@ -1,3 +1,10 @@
+"""
+Divide-and-conquer group testing simulation.
+
+Finds a small set of defective nodes using membership tests on groups,
+demonstrating efficiency and measuring complexity on synthetic data.
+"""
+
 import random
 from typing import List
 import math

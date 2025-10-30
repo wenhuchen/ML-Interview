@@ -1,4 +1,9 @@
-# DPO
+"""
+Direct Preference Optimization (DPO) demo.
+
+Trains a policy against a frozen reference on toy preference pairs using a
+beta-weighted logistic objective, then samples from the trained policy.
+"""
 
 from problem2 import BPETokenizer
 from itertools import chain

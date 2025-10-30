@@ -1,3 +1,10 @@
+"""
+MinHash utilities for near-duplicate detection.
+
+Provides an LSH-style MinHash implementation to estimate Jaccard
+similarity between document shingles for deduplication.
+"""
+
 import hashlib
 import re
 from typing import List, Set, Tuple
@@ -369,4 +376,3 @@ def demo():
 
 if __name__ == "__main__":
     demo()
-

@@ -1,4 +1,9 @@
-# RLHF with Value Network
+"""
+RLHF with an explicit value head (actor-critic).
+
+Extends the Transformer with a value network for baseline estimation and
+optimizes on toy preference data with PPO-style objectives.
+"""
 from math import log
 import torch
 import torch.nn.functional as F
@@ -252,4 +257,3 @@ def rlhf_demo():
 
 if __name__ == "__main__":
     rlhf_demo()
-

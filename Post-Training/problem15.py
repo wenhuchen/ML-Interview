@@ -1,6 +1,9 @@
-# This file collects all the relevant code that we covered thus far
-# throughout Chapters 3-4.
-# This file can be run as a standalone script.
+"""
+From-scratch GPT building blocks with KV cache.
+
+Consolidates Chapter 3–4 components (attention, layer norm, MLP, blocks)
+into a minimal GPT model and demo code runnable as a script.
+"""
 
 import time
 import tiktoken

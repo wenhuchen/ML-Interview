@@ -1,4 +1,9 @@
-# Reward Model
+"""
+Reward model for toy preference data.
+
+Trains a small Transformer to score texts from simple positive/negative
+pairs and includes a left-padding batch encoding utility.
+"""
 
 from problem2 import BPETokenizer
 from itertools import chain

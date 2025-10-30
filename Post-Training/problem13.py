@@ -1,4 +1,9 @@
-# RLHF
+"""
+RLHF training loop on toy preferences.
+
+Implements a PPO-style policy optimization using a learned reward model,
+with utilities for tokenization, log-prob computation, and batching.
+"""
 from math import log
 import torch
 import torch.nn.functional as F
@@ -210,4 +215,3 @@ def rlhf_demo():
 
 if __name__ == "__main__":
     rlhf_demo()
-

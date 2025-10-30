@@ -1,6 +1,9 @@
-# This file collects all the relevant code that we covered thus far
-# throughout Chapters 3-4.
-# This file can be run as a standalone script.
+"""
+GPT with sliding-window attention and caching.
+
+Implements a windowed masking strategy over keys/values for efficient long
+contexts, plus cache-aware generation; consolidates Chapter 3–4 code.
+"""
 
 import time
 import tiktoken

@@ -1,6 +1,9 @@
-# This file collects all the relevant code that we covered thus far
-# throughout Chapters 3-4.
-# This file can be run as a standalone script.
+"""
+Mixture-of-Experts (MoE) feed-forward for GPT.
+
+Adds top-k gated MoE layers to the sliding-window GPT, with KV caching and
+simple generation utilities for demonstration.
+"""
 
 import time
 import tiktoken
@@ -235,4 +238,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

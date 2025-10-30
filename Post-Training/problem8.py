@@ -1,3 +1,9 @@
+"""
+Simple TF–IDF-style retrieval with a BPE tokenizer.
+
+Builds sparse term-weighted vectors for a small corpus and ranks documents
+by similarity to a query using dot products.
+"""
 from problem2 import BPETokenizer
 from collections import Counter
 import math
