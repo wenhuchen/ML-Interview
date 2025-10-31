@@ -23,6 +23,8 @@ This repository collects a set of small, focused Python scripts exploring post-t
 - `problem17.py`: MoE feed‑forward for GPT. Top‑k gated Mixture‑of‑Experts integrated into the sliding‑window model.
 - `problem18.py`: Group testing simulation. Divide‑and‑conquer identification of defective nodes with complexity tracing.
 - `problem19.py`: DPO training demo. Direct Preference Optimization against a frozen reference on toy preferences.
+- `problem20.py`: Distributed Training with FSDP. Memory profiling demo showing how GPU memory consumption changes with different FSDP configurations.
+- `problem21.py`: KL Divergence calculations. Explores different forms of KL divergence (forward, reverse, symmetric) and applications in RLHF, PPO, DPO, and GRPO.
 
 ## Running Examples
 
