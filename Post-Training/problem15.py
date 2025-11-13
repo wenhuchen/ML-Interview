@@ -64,9 +64,8 @@ class LayerNorm(nn.Module):
 		self.shift = nn.Parameter(torch.zeros(emb_size)) 
 
 	def forward(self, x: torch.Tensor):
-		x = (x -  x.mean(-1, keepdim=True)) / (x.std(-1, keepdim=True) + 1e-8)
+		x = (x - x.mean(-1, keepdim=True)) / (x.std(-1, keepdim=True) + 1e-8)
 		return self.scale * x + self.shift
-
 
 
 class GELU(nn.Module):

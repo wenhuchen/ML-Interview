@@ -23,6 +23,7 @@ def train_data_generator(config: dict):
 		], -1)
 	return (inputs, target)
 
+
 def compute_rewards(rollouts: list, target: torch.Tensor):
 	advantages = []
 	unnormalized_rewards = []
@@ -37,12 +38,14 @@ def compute_rewards(rollouts: list, target: torch.Tensor):
 			else:
 				reward.append(-1.0)
 		reward = torch.tensor(reward)
-		unnormalized_rewards.append(reward)
 		reward = (reward - reward.mean()) / (reward.std() + 1e-8)
 		advantages.append(reward)
+		unnormalized_rewards.append(reward)
+
 	unnormalized_rewards = torch.stack(unnormalized_rewards, 0)
 	advantages = torch.stack(advantages, 0)
 	return unnormalized_rewards, advantages
+
 
 # Simple checkpoint functions
 def save_model(model, optimizer, step):
@@ -53,11 +56,13 @@ def save_model(model, optimizer, step):
 	}, f'checkpoint_{step}.pt')
 	print(f'Saved checkpoint at step {step}')
 
+
 def load_model(model, optimizer, checkpoint_path):
 	checkpoint = torch.load(checkpoint_path)
 	model.load_state_dict(checkpoint['model'])
 	optimizer.load_state_dict(checkpoint['optimizer'])
 	return checkpoint['step']
+
 
 def compute_entropy(model, rollouts, target_length):
 	# Calculate entropy bonus to encourage exploration
@@ -68,6 +73,7 @@ def compute_entropy(model, rollouts, target_length):
 	entropy = -(probs * F.log_softmax(logits, dim=-1)).sum(dim=-1)
 	entropy = entropy.mean()  # Small entropy bonus
 	return entropy
+
 
 def compute_neg_logp(model, rollouts, target_length):
 	batch_size, group_size = rollouts.shape[0], rollouts.shape[1]
@@ -88,6 +94,7 @@ def compute_neg_logp(model, rollouts, target_length):
 	loss = loss.view(batch_size, group_size, -1)
 	return loss
 
+
 def rl_step(config, model, inputs, targets):
 	rollouts = []
 	for i in range(config['group_size']):
@@ -107,6 +114,7 @@ def rl_step(config, model, inputs, targets):
 	total_loss = adv_loss.sum(-1).mean(1).sum() - config['entropy_weight'] * entropy
 
 	return unnormalized_rewards, advantage, total_loss
+
 
 def evaluate(step: int, config: dict, model: nn.Module):
 	inputs, targets = train_data_generator(config)
@@ -142,6 +150,7 @@ def evaluate(step: int, config: dict, model: nn.Module):
 	print('Evaluation results:')
 	print(f'step: {step}, success: {success/total:.3f}, close: {close_matches/total:.3f}')
 	print('===============================================')
+
 
 if __name__  == '__main__':
 	config = {

@@ -14,7 +14,7 @@ import torch.nn.functional as F
 class Attention(nn.Module):
     """Improved attention mechanism with pre-norm, dropout, and better scaling"""
     
-    def __init__(self, dim: int, head: int, dropout: float = 0.1):
+    def __init__(self, dim: int, head: int, dropout: float = 0.1, max_length: int = 1000):
         super().__init__()
         self.head = head
         self.dim = dim
@@ -41,6 +41,19 @@ class Attention(nn.Module):
         
         self.dropout = nn.Dropout(dropout)
         
+        # RoPE: Initialize rotary embeddings for this attention layer
+        # Only need to compute for head_dim, not full dim
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, self.head_dim, 2).float() / self.head_dim))
+        self.register_buffer('inv_freq', inv_freq)
+        
+        # Pre-compute cos and sin for efficiency
+        t = torch.arange(max_length).float()
+        freqs = torch.outer(t, inv_freq)
+        cos = torch.cos(freqs)
+        sin = torch.sin(freqs)
+        self.register_buffer('cos_cached', cos)
+        self.register_buffer('sin_cached', sin)
+        
     def forward(self, x: torch.Tensor, seq_mask: torch.Tensor = None):        
         # Pre-norm attention
         normed_x = self.norm1(x)
@@ -54,6 +67,35 @@ class Attention(nn.Module):
         
         return x
     
+    def _apply_rope(self, x: torch.Tensor, seq_len: int):
+        """
+        Apply Rotary Position Embedding to query or key tensors
+        x shape: (batch_size, num_heads, seq_len, head_dim)
+        """
+        # Get cos and sin for current sequence length
+        cos = self.cos_cached[:seq_len, :]  # (seq_len, head_dim // 2)
+        sin = self.sin_cached[:seq_len, :]  # (seq_len, head_dim // 2)
+        
+        # Split x into even and odd dimensions
+        x1 = x[..., 0::2]  # Even dimensions
+        x2 = x[..., 1::2]  # Odd dimensions
+        
+        import pdb; pdb.set_trace()
+        # Apply rotation
+        # Need to broadcast: cos/sin are (seq_len, head_dim//2), need (1, 1, seq_len, head_dim//2)
+        cos = cos.unsqueeze(0).unsqueeze(0)  # (1, 1, seq_len, head_dim//2)
+        sin = sin.unsqueeze(0).unsqueeze(0)  # (1, 1, seq_len, head_dim//2)
+        
+        x1_rotated = x1 * cos - x2 * sin
+        x2_rotated = x1 * sin + x2 * cos
+        
+        # Interleave back together
+        x_rotated = torch.zeros_like(x)
+        x_rotated[..., 0::2] = x1_rotated
+        x_rotated[..., 1::2] = x2_rotated
+        
+        return x_rotated
+    
     def _attention(self, x: torch.Tensor, seq_mask: torch.Tensor = None):
         batch_size, length, dim = x.shape
         
@@ -65,6 +107,10 @@ class Attention(nn.Module):
         q = q.view(batch_size, length, self.head, self.head_dim).transpose(1, 2)
         k = k.view(batch_size, length, self.head, self.head_dim).transpose(1, 2)
         v = v.view(batch_size, length, self.head, self.head_dim).transpose(1, 2)
+        
+        # Apply RoPE to queries and keys (NOT to values!)
+        q = self._apply_rope(q, length)
+        k = self._apply_rope(k, length)
         
         # Compute attention scores
         scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
@@ -112,7 +158,7 @@ class Transformer(nn.Module):
         
         # Transformer layers
         self.layers = nn.ModuleList([
-            Attention(dim, head, dropout) for _ in range(layers)
+            Attention(dim, head, dropout, max_length) for _ in range(layers)
         ])
         
         # Final layer norm and projection
@@ -123,39 +169,9 @@ class Transformer(nn.Module):
         self.dropout = nn.Dropout(dropout)
     
     def _init_rope(self):
-        """Initialize Rotary Position Embedding (RoPE)"""
-        inv_freq = 1.0 / (10000 ** (torch.arange(0, self.dim, 2).float() / self.dim))
-        self.register_buffer('inv_freq', inv_freq)
-    
-    def _apply_rope(self, x: torch.Tensor, seq_len: int):
-        """Apply Rotary Position Embedding"""
-        if not self.use_rope:
-            return x + self.pos_embed[:, :seq_len]
-        
-        # Create position indices
-        pos = torch.arange(seq_len, device=x.device).float()
-        
-        # Compute frequencies
-        freqs = torch.outer(pos, self.inv_freq)
-        
-        # Create cos and sin matrices
-        cos = torch.cos(freqs)
-        sin = torch.sin(freqs)
-        
-        # Apply rotation to even and odd dimensions
-        x_even = x[..., 0::2]
-        x_odd = x[..., 1::2]
-        
-        # Rotate
-        x_rotated_even = x_even * cos.unsqueeze(0) - x_odd * sin.unsqueeze(0)
-        x_rotated_odd = x_even * sin.unsqueeze(0) + x_odd * cos.unsqueeze(0)
-        
-        # Interleave back
-        x_rotated = torch.zeros_like(x)
-        x_rotated[..., 0::2] = x_rotated_even
-        x_rotated[..., 1::2] = x_rotated_odd
-        
-        return x_rotated
+        """Initialize Rotary Position Embedding (RoPE) - placeholder, actual RoPE is in Attention layers"""
+        # RoPE is now handled in each Attention layer, not at the embedding level
+        pass
     
     def forward(self, x: torch.Tensor, project: bool = True):
         _, length = x.shape
@@ -164,13 +180,15 @@ class Transformer(nn.Module):
         # Token embedding
         x = self.embed(x)
         
-        # Apply positional encoding
-        x = self._apply_rope(x, length)
+        # Add learned positional embeddings (only if not using RoPE)
+        # RoPE is applied inside each attention layer to Q and K
+        if not self.use_rope:
+            x = x + self.pos_embed[:, :length]
         
         # Apply dropout
         x = self.dropout(x)
 
-        # Pass through transformer layers
+        # Pass through transformer layers (RoPE applied inside each layer)
         for layer in self.layers:
             x = layer(x, seq_mask=seq_mask)
         
