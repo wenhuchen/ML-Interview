@@ -4,7 +4,6 @@ RLHF training loop on toy preferences.
 Implements a PPO-style policy optimization using a learned reward model,
 with utilities for tokenization, log-prob computation, and batching.
 """
-from math import log
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -17,7 +16,8 @@ from problem5 import Transformer
 
 # Reuse reward model utilities and toy preference data
 from problem12 import RewardModel, encode_batch_left_pad, pairs
-from torch.nn.utils.rnn import pad_sequence;
+from torch.nn.utils.rnn import pad_sequence
+
 
 def detach_clone(model: nn.Module) -> nn.Module:
     """Create a reference copy with detached weights (no grad)."""
@@ -34,6 +34,7 @@ def detach_clone(model: nn.Module) -> nn.Module:
     for p in ref.parameters():
         p.requires_grad_(False)
     return ref
+
 
 def compute_logprobs(logits: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
     logprobs = F.log_softmax(logits, dim=-1)

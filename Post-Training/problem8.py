@@ -12,37 +12,25 @@ import numpy as np
 corpus = [
     # Original
     "The quick brown fox jumps over the lazy dog.",
-    
     # Exact duplicate
     "The quick brown fox jumps over the lazy dog",
-    
     # Duplicate with slight variation
     "The quick brown fox jumps over the lazy dog!",
-    
     # Different documents
     "To be or not to be, that is the question.",
-
     "The early bird catches a worm.",
-
     "To be or not to be, the early bird catches many worm.",
-
     # Another exact duplicate
     "To be or not to be, that is the question.",
-    
     # Near duplicate (small change)
     "To be or not to be, that is the question!",
-    
     # Similar content but different enough
     "Something completely different here.",
-    
     # Another duplicate
     "The early bird catches the worm.",
-    
     # Slightly modified
     "The early bird catches many worm.",
-    
     "The quick question cannot catch the right question.",
-    
     "The quick question catches a human in the worm."
 ]
 
@@ -75,10 +63,6 @@ if __name__ == "__main__":
     for token, count in counter.items():
         # Option 1: Query without IDF (current approach, most common)
         query[token] = count
-        
-        # Option 2: Query with IDF (uncomment to try):
-        # if token in freq_mapping:
-        #     query[token] = count * freq_mapping[token]
 
     scores = query @ arrays.T
 

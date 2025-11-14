@@ -12,17 +12,10 @@ from torch.optim.lr_scheduler import StepLR
 
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-from torch.distributed.fsdp.fully_sharded_data_parallel import (
-    CPUOffload,
-    BackwardPrefetch,
-)
 from torch.distributed.fsdp.wrap import (
     size_based_auto_wrap_policy,
-    enable_wrap,
-    wrap,
 )
 
 class Net(nn.Module):
@@ -98,7 +91,7 @@ def fsdp_main(rank, world_size, args):
                         transform=transform)
     dataset2 = datasets.MNIST('../data', train=False,
                         transform=transform)
-    
+
     sampler1 = DistributedSampler(dataset1, rank=rank, num_replicas=world_size, shuffle=True)
     sampler2 = DistributedSampler(dataset2, rank=rank, num_replicas=world_size)
 

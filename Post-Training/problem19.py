@@ -10,27 +10,27 @@ from itertools import chain
 from problem5 import Transformer
 import torch
 from datasets import Dataset
-from torch.utils.data import DataLoader, RandomSampler
-from torch import nn
+from torch.utils.data import DataLoader
 from torch import optim
 from problem13 import detach_clone
 
 pairs = [
-	{"positive": f"[BOS] You are good", "negative": f"[BOS] You are bad"},
-	{"positive": f"[BOS] I am good", "negative": f"[BOS] I am bad"},
-	{"positive": f"[BOS] Your performance is good", "negative": f"[BOS] Your performance is bad"},
-	{"positive": f"[BOS] Your money is good", "negative": f"[BOS] Your money is bad"},
-	{"positive": f"[BOS] Your health is good", "negative": f"[BOS] Your health is bad"},
-	{"positive": f"[BOS] Health is good", "negative": f"[BOS] Your health is bad"},
-	{"positive": f"[BOS] White is good", "negative": f"[BOS] Black is bad"},
-	{"positive": f"[BOS] White is good", "negative": f"[BOS] White is bad"},
-	{"positive": f"[BOS] Black is good", "negative": f"[BOS] White is bad"},
-	{"positive": f"[BOS] Black is good", "negative": f"[BOS] Black is bad"}
+    {"positive": "[BOS] You are good", "negative": "[BOS] You are bad"},
+    {"positive": "[BOS] I am good", "negative": "[BOS] I am bad"},
+    {"positive": "[BOS] Your performance is good", "negative": "[BOS] Your performance is bad"},
+    {"positive": "[BOS] Your money is good", "negative": "[BOS] Your money is bad"},
+    {"positive": "[BOS] Your health is good", "negative": "[BOS] Your health is bad"},
+    {"positive": "[BOS] Health is good", "negative": "[BOS] Your health is bad"},
+    {"positive": "[BOS] White is good", "negative": "[BOS] Black is bad"},
+    {"positive": "[BOS] White is good", "negative": "[BOS] White is bad"},
+    {"positive": "[BOS] Black is good", "negative": "[BOS] White is bad"},
+    {"positive": "[BOS] Black is good", "negative": "[BOS] Black is bad"}
 ]
 
 
-eval_text = f"[BOS] "
+eval_text = "[BOS] "
 # eval_text = "Black are bad"
+
 
 def encode_batch_left_pad(texts, tokenizer, max_length=None, pad_token_id=50256):
     """Left padding for efficient generation"""
@@ -39,16 +39,17 @@ def encode_batch_left_pad(texts, tokenizer, max_length=None, pad_token_id=50256)
 
     if max_length is None:
         max_length = max(len(seq) for seq in encoded_texts)
-    
+
     batch_size = len(texts)
     batch_tensor = torch.full((batch_size, max_length), pad_token_id, dtype=torch.long, device=device)
-    
+
     for i, seq in enumerate(encoded_texts):
         seq_len = len(seq)
         start_idx = max_length - seq_len  # Start from the right
         batch_tensor[i, start_idx:] = torch.tensor(seq, device=device)
-    
+
     return batch_tensor
+
 
 if __name__ == "__main__":
     tokenizer = BPETokenizer(vocab_size=100)

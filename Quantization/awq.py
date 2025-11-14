@@ -1,26 +1,24 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
 from helper import *
 
 class SimpleNN(nn.Module):
     def __init__(self, input_dim=64, hidden_dims=[128, 256, 128, 10]):
         super().__init__()
-        
+
         layers = []
         prev_dim = input_dim
-        
+
         # Build hidden layers
         for hidden_dim in hidden_dims:
             layers.append(nn.Linear(prev_dim, hidden_dim, bias=False))
             if hidden_dim != hidden_dims[-1]:
                 layers.append(nn.ReLU())
             prev_dim = hidden_dim
-        
+
         self.layers = nn.ModuleList(layers)
-    
+
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
@@ -32,7 +30,7 @@ class QuantizedNN(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList(quantized_state['layers'])
         self.scales = quantized_state['scales']
-    
+
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
@@ -81,14 +79,14 @@ def main():
     hidden_dims = [128, 256, 128, 10]
     batch_size = 32
     quantization_bits = 8
-    
+
     # Create synthetic data
     X_train, y_train = create_sample_data(1000, input_dim, hidden_dims[-1])
-    
+
     # Create data loaders
     train_dataset = TensorDataset(X_train, y_train)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    
+
     # Create and train original model
     model = SimpleNN(input_dim, hidden_dims).to('cuda')
 
@@ -135,7 +133,7 @@ def main():
     original_size = sum(p.numel() * 32 for p in model.parameters()) / 8  # in bytes
     quantized_size = sum(p.numel() * quantization_bits for p in quantized_model.parameters()) / 8  # in bytes
     size_reduction = (original_size - quantized_size) / original_size * 100
-    
+
     print(f"\nModel size reduction: {size_reduction:.2f}%")
 
 if __name__ == "__main__":

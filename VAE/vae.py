@@ -23,13 +23,13 @@ class VAE(nn.Module):
             nn.Linear(128 * 7 * 7, 500),
             nn.ReLU()
         )
-        
+
         self.fc_mu = nn.Linear(500, latent_dim)
         self.fc_logvar = nn.Linear(500, latent_dim)
-        
+
         # Decoder
         self.decoder_input = nn.Linear(latent_dim, 500)
-        
+
         self.decoder = nn.Sequential(
             nn.Linear(500, 128 * 7 * 7),
             nn.ReLU(),
@@ -112,11 +112,11 @@ if __name__ == "__main__":
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
-                
+
                 if batch_idx % 100 == 0:
                     print(f'Train Epoch: {epoch} [{batch_idx * len(data)}/{len(train_loader.dataset)} '
                         f'({100. * batch_idx / len(train_loader):.0f}%)]\tLoss: {loss.item() / len(data):.6f}')
-            
+
             print(f'====> Epoch: {epoch} Average loss: {train_loss / len(train_loader.dataset):.4f}')
 
         # Run training

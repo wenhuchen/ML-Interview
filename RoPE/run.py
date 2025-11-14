@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from rope import RotaryPositionalEmbeddings
+
 
 class RoPEEmbedding(nn.Module):
     def __init__(self, dim: int):
@@ -22,12 +22,12 @@ class RoPEEmbedding(nn.Module):
         :return: Tensor of shape (batch_size, head_dim, seq_len, dim) with RoPE applied
         """
         _, _, seq_len, _ = x.shape
-        pos = torch.arange(shift, seq_len + shift, device=x.device).unsqueeze(1)  # (seq_len, 1)
+        pos = torch.arange(shift, seq_len + shift, device=x.device).unsqueeze(1)
 
         sin_cos = pos * self.inv_freq.unsqueeze(0)  # (seq_len, dim/2)
         sin, cos = sin_cos.sin(), sin_cos.cos()
 
-        x_odd, x_even = torch.chunk(x, 2, dim=-1)  # Split into even and odd dimensions
+        x_odd, x_even = torch.chunk(x, 2, dim=-1)
 
         x_transformed_odd = x_odd * cos[..., :, :] - x_even * sin[..., :, :]
         x_tranformed_even = x_even * cos[..., :, :] + x_odd * sin[..., :, :]
@@ -62,26 +62,32 @@ class SelfAttentionWithRoPE(nn.Module):
 
         # Compute Q, K, V
         qkv = self.qkv_proj(x)  # (batch_size, seq_len, 3 * embed_dim)
-        qkv = qkv.reshape(batch_size, seq_len, 3, self.num_heads, self.head_dim)  # (batch_size, seq_len, 3, num_heads, head_dim)
-        q, k, v = torch.unbind(qkv, dim=2)  # Each is (batch_size, seq_len, num_heads, head_dim)
-        
+        qkv = qkv.reshape(
+            batch_size, seq_len, 3, self.num_heads, self.head_dim)
+        q, k, v = torch.unbind(qkv, dim=2)
+
         outputs = []
         for shift in [16, 32]:
             # Apply RoPE to Q and K
-            q_rotated = self.rope(q.permute(0, 2, 1, 3), shift=shift).permute(0, 2, 1, 3)  # RoPE applied (batch_size, seq_len, num_heads, head_dim)
-            k_rotated = self.rope(k.permute(0, 2, 1, 3), shift=shift).permute(0, 2, 1, 3)  # RoPE applied (batch_size, seq_len, num_heads, head_dim)
+            q_rotated = self.rope(
+                q.permute(0, 2, 1, 3), shift=shift).permute(0, 2, 1, 3)
+            k_rotated = self.rope(
+                k.permute(0, 2, 1, 3), shift=shift).permute(0, 2, 1, 3)
 
             # Scaled dot-product attention
-            causal_mask = torch.tril(torch.ones(seq_len, seq_len, device=x.device)).unsqueeze(0).unsqueeze(0)
-            attn_weights = torch.einsum("bqhd,bkhd->bhqk", q_rotated, k_rotated) / math.sqrt(self.head_dim)
-            attn_weights = attn_weights.masked_fill(causal_mask == 0, float('-inf'))
+            causal_mask = torch.tril(
+                torch.ones(seq_len, seq_len, device=x.device)).unsqueeze(0).unsqueeze(0)
+            attn_weights = torch.einsum(
+                "bqhd,bkhd->bhqk", q_rotated, k_rotated) / math.sqrt(self.head_dim)
+            attn_weights = attn_weights.masked_fill(
+                causal_mask == 0, float('-inf'))
 
             # Softmax and attention output
-            attn_probs = torch.softmax(attn_weights, dim=-1)  # (batch_size, num_heads, seq_len, seq_len)
-            attn_output = torch.einsum("bhqk,bkhd->bqhd", attn_probs, v)  # (batch_size, seq_len, num_heads, head_dim)
+            attn_probs = torch.softmax(attn_weights, dim=-1)
+            attn_output = torch.einsum("bhqk,bkhd->bqhd", attn_probs, v)
 
             # Combine heads and project
-            attn_output = attn_output.reshape(batch_size, seq_len, embed_dim)  # (batch_size, seq_len, embed_dim)
+            attn_output = attn_output.reshape(batch_size, seq_len, embed_dim)
 
             # Store outputs in an array
             outputs.append([attn_probs, self.out_proj(attn_output)])
@@ -113,6 +119,6 @@ if __name__ == "__main__":
         with torch.autocast(device_type='cuda', dtype=dtype):
             with torch.no_grad():
                 outputs = self_attention(x)
-                print(outputs[0][0][0][0]) # Non shifted attention for bfloat16
-                print(outputs[1][0][0][0]) # Shifted attention for bfloat16
+                print(outputs[0][0][0][0])
+                print(outputs[1][0][0][0])
                 print('Error: ', (outputs[0][0][0][0] - outputs[1][0][0][0]).abs().sum())

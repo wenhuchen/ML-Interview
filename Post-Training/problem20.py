@@ -6,17 +6,15 @@ This script demonstrates how GPU memory consumption decreases as fsdp_size incre
 Usage:
   # fsdp_size=1 (no sharding within each replica group)
   torchrun --nnodes 1 --nproc-per-node 4 problem20.py --fsdp_size 1
-  
+
   # fsdp_size=2 (sharding across 2 GPUs)
   torchrun --nnodes 1 --nproc-per-node 4 problem20.py --fsdp_size 2
-  
+
   # fsdp_size=4 (sharding across all 4 GPUs)
   torchrun --nnodes 1 --nproc-per-node 4 problem20.py --fsdp_size 4
 """
 import sys
 import argparse
-import torch.nn as nn
-import torch.nn.functional as F
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 import torch.distributed as dist
 from torch.distributed.device_mesh import init_device_mesh
@@ -87,7 +85,7 @@ if __name__ == "__main__":
     setup()
     rank = get_rank()
     world_size = get_world_size()
-    
+
     # Validate fsdp_size
     if world_size % args.fsdp_size != 0:
         if rank == 0:
@@ -99,15 +97,15 @@ if __name__ == "__main__":
     device = torch.device(f"cuda:{rank}")
     torch.cuda.set_device(device)
     torch.cuda.reset_peak_memory_stats(device)
-    
+
     # Print configuration
     if rank == 0:
         print("=" * 100)
-        print(f"FSDP Memory Profiling - Configuration:")
+        print("FSDP Memory Profiling - Configuration:")
         print(f"  World Size: {world_size}")
         print(f"  FSDP Size: {args.fsdp_size}")
         print(f"  DDP Replicas: {world_size // args.fsdp_size}")
-        print(f"  Sharding Strategy: HYBRID_SHARD")
+        print("  Sharding Strategy: HYBRID_SHARD")
         print("=" * 100)
         print()
 
@@ -133,7 +131,7 @@ if __name__ == "__main__":
         mesh_shape=(world_size // args.fsdp_size, args.fsdp_size),
         mesh_dim_names=["ddp", "fsdp"]
     )
-    
+
     if rank == 0:
         print(f"\nDevice mesh created: {device_mesh}\n")
 
@@ -182,7 +180,7 @@ if __name__ == "__main__":
     all_peak_memory = [torch.zeros(1, device=device) for _ in range(world_size)]
 
     dist.all_gather(all_peak_memory, torch.tensor([peak_memory], device=device))
-    
+
     if rank == 0:
         print("\n" + "=" * 100)
         print(f"SUMMARY - FSDP Size: {args.fsdp_size}")

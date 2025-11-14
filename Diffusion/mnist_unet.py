@@ -10,7 +10,7 @@ class ChannelShuffle(nn.Module):
         n,c,h,w=x.shape
         x=x.view(n,self.groups,c//self.groups,h,w) # group
         x=x.transpose(1,2).contiguous().view(n,-1,h,w) #shuffle
-        
+
         return x
 
 class ConvBnSiLu(nn.Module):
@@ -79,9 +79,9 @@ class TimeMLP(nn.Module):
     def forward(self,x,t):
         t_emb=self.mlp(t).unsqueeze(-1).unsqueeze(-1)
         x=x+t_emb
-  
+
         return self.act(x)
-    
+
 class EncoderBlock(nn.Module):
     def __init__(self,in_channels,out_channels,time_embedding_dim):
         super().__init__()
@@ -90,7 +90,7 @@ class EncoderBlock(nn.Module):
 
         self.time_mlp=TimeMLP(embedding_dim=time_embedding_dim,hidden_dim=out_channels,out_dim=out_channels//2)
         self.conv1=ResidualDownsample(out_channels//2,out_channels)
-    
+
     def forward(self,x,t=None):
         x_shortcut=self.conv0(x)
         if t is not None:
@@ -98,7 +98,7 @@ class EncoderBlock(nn.Module):
         x=self.conv1(x)
 
         return [x,x_shortcut]
-        
+
 class DecoderBlock(nn.Module):
     def __init__(self,in_channels,out_channels,time_embedding_dim):
         super().__init__()
@@ -135,7 +135,7 @@ class Unet(nn.Module):
 
         self.encoder_blocks=nn.ModuleList([EncoderBlock(c[0],c[1],time_embedding_dim) for c in channels])
         self.decoder_blocks=nn.ModuleList([DecoderBlock(c[1],c[0],time_embedding_dim) for c in channels[::-1]])
-    
+
         self.mid_block=nn.Sequential(*[ResidualBottleneck(channels[-1][1],channels[-1][1]) for i in range(2)],
                                         ResidualBottleneck(channels[-1][1],channels[-1][1]//2))
 

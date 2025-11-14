@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
 import copy
 
 @torch.no_grad()
@@ -9,7 +8,7 @@ def compute_activation_stats(model, calibration_loader):
     Compute activation statistics for each layer using calibration data
     """
     input_feats = {}
-    
+
     def hook_fn(name):
         def hook(module, input, output):
             input = input[0]
@@ -17,13 +16,13 @@ def compute_activation_stats(model, calibration_loader):
                 input_feats[name] = []
             input_feats[name].append(input.detach())
         return hook
-    
+
     # Register hooks for linear layers
     hooks = []
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
             hooks.append(module.register_forward_hook(hook_fn(name)))
-    
+
     # Run calibration data through model
     for batch in calibration_loader:
         X = batch[0].to('cuda')
@@ -32,12 +31,12 @@ def compute_activation_stats(model, calibration_loader):
     # Remove hooks
     for hook in hooks:
         hook.remove()
-    
+
     # Compute statistics
     stats = {}
     for name, feat in input_feats.items():
         stats[name] = torch.cat(feat, dim=0)
-    
+
     return stats
 
 q_config = {
@@ -140,9 +139,9 @@ def search_module_scale(layer, x, w_bit: int = 8):
             best_error = loss
             best_scales = scales
         layer.weight.data = org_sd.to('cuda')
-    
+
     assert torch.isnan(best_scales).sum() == 0, best_scales
-    
+
     best_scales = best_scales.detach().cpu()
 
     quantized_layer = nn.Linear(layer.in_features, layer.out_features, bias=False)

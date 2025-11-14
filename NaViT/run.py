@@ -1,9 +1,7 @@
 from transformers import AutoTokenizer, AutoConfig, AutoProcessor
 from idefics2 import Idefics2ForConditionalGeneration
 import torch
-import matplotlib.pyplot as plt
 from PIL import Image
-import numpy as np
 
 
 if __name__ == '__main__':

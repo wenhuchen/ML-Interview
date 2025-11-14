@@ -1,12 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
 from datasets import load_dataset
 from transformers import Trainer, TrainingArguments
-import numpy as np
 import torchvision.transforms as transforms
-import torch.nn.functional as F
 
 class SimpleCNN(nn.Module):
     def __init__(self):
@@ -24,7 +21,7 @@ class SimpleCNN(nn.Module):
         x = self.maxpool(x)
         x = x.view(x.size(0), -1)
         logits = self.fc_block(x)
-        
+
         if labels is not None:
             loss_fn = nn.CrossEntropyLoss()
             loss = loss_fn(logits, labels)

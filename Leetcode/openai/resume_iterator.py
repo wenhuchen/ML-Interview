@@ -70,7 +70,7 @@ class ListIterator(ResumableIterator):
 
   def set_state(self, state):
     pass
-  
+
 
 
 ##############################################

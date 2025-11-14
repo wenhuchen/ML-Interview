@@ -6,11 +6,9 @@ numerically stable softmax suitable for large sequences.
 
 import numpy as np
 import numpy.typing as npt
-import torch
-from typing import Tuple
-import math
 
 npt_f32 = npt.NDArray[np.float32]
+
 
 def softmax_memory_efficient(s: npt_f32, dim: int):
     """
@@ -84,7 +82,7 @@ def scaled_dot_product_attention_efficient_forward(
 
     # *****Implement scaled_dot_product_attention_efficient_forward*****
     N = q.shape[0]
-    k_splits = np.split(k, s, axis=0) # [M/s, D]
+    k_splits = np.split(k, s, axis=0)
     v_splits = np.split(v, s, axis=0)
     att = np.zeros_like(q) # [N, D]
     softmax_sum = np.zeros([N, 1])
@@ -95,21 +93,22 @@ def scaled_dot_product_attention_efficient_forward(
 
     return att/softmax_sum
 
+
 if __name__ == "__main__":
-	dim = 8
+    dim = 8
 
-	sequence_length = 12
-	grad = np.random.rand(15, dim).astype('float32')
-	q = np.random.rand(15, dim).astype('float32')
+    sequence_length = 12
+    grad = np.random.rand(15, dim).astype('float32')
+    q = np.random.rand(15, dim).astype('float32')
 
-	k = np.random.rand(sequence_length, dim).astype('float32')
-	v = np.random.rand(sequence_length, dim).astype('float32')
+    k = np.random.rand(sequence_length, dim).astype('float32')
+    v = np.random.rand(sequence_length, dim).astype('float32')
 
-	output = scaled_dot_product_attention_efficient_forward(
-		q=q,
-		k=k,
-		v=v,
-		s=4
-	)
+    output = scaled_dot_product_attention_efficient_forward(
+        q=q,
+        k=k,
+        v=v,
+        s=4
+    )
 
-	print(output)
+    print(output)

@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 
-import torch
 from torch.autograd import Function
 from typing import Tuple, Any
 import sys
+
 
 def detach_variable(inputs: Tuple[Any, ...]) -> Tuple[torch.Tensor, ...]:
     if isinstance(inputs, tuple):
@@ -62,12 +62,10 @@ class CheckpointFunction(Function):
 
         # Compute the gradients using the recomputed activations
         torch.autograd.backward(outputs, grad_outputs)
-        grads = tuple(arg.grad for arg in ctx.args if isinstance(arg, torch.Tensor))
+        grads = tuple(
+            arg.grad for arg in ctx.args if isinstance(arg, torch.Tensor)
+        )
         return (None, None) + grads
-
-
-def checkpoint(run_fn, *args, preserve_rng_state=True):
-    return CheckpointFunction.apply(run_fn, preserve_rng_state, *args)
 
 
 class CheckpointedMLP(nn.Module):
@@ -108,6 +106,7 @@ class CheckpointedMLP(nn.Module):
         x = self.fc3(x)
         return x
 
+
 if __name__ == "__main__":
     # Define the model, loss function, and optimizer
     input_dim = 1000
@@ -136,4 +135,7 @@ if __name__ == "__main__":
     optimizer.step()
 
     peak_memory = torch.cuda.max_memory_allocated()
-    print(f"Peak GPU memory usage: {peak_memory / (1024 ** 2):.2f} MB with Checkpoint = {sys.argv[1]}")
+    print(
+        f"Peak GPU memory usage: {peak_memory / (1024 ** 2):.2f} MB "
+        f"with Checkpoint = {sys.argv[1]}"
+    )

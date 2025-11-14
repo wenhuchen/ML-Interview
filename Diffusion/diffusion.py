@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import transforms
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import OneCycleLR
@@ -34,7 +33,7 @@ class LinearBetaScheduler:
 
     def get_variance(self, t):
         return self.betas[t.cpu().long()].to(t.device)
-    
+
     def get_alpha(self, t):
         return 1 - self.betas[t.cpu().long()].to(t.device)
 
@@ -43,7 +42,7 @@ class LinearBetaScheduler:
 
 
 def create_mnist_dataloaders(batch_size,image_size=28,num_workers=4):
-    
+
     preprocess=transforms.Compose([transforms.Resize(image_size),\
                                     transforms.ToTensor(),\
                                     transforms.Normalize([0.5],[0.5])]) #[0,1] to [-1,1]
@@ -116,7 +115,7 @@ def sample_clip(scheduler, t: int, model, x_t):
     else:
         mean=(beta_t / (1. - bar_alpha_t))*x_0_pred #alpha_t_cumprod_prev=1 since 0!=1
         std=0.0
-    
+
     return mean+std*noise
 
 

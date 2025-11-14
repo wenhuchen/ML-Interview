@@ -1,6 +1,7 @@
 import triton
 import triton.language as tl
-import torch, time
+import torch
+import time
 
 @triton.jit
 def fused_bias_ln(X, BIAS, GAMMA, BETA, Y,

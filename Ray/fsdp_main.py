@@ -25,6 +25,7 @@ init_process_group(rank=args.rank, world_size=args.world_size, backend=args.back
 device = torch.cuda.current_device() if torch.cuda.is_available() else torch.device('cpu')
 print('rank', args.rank, 'device', device)
 
+
 class Net(nn.Module):
 
     def __init__(self, num_layers, hidden_size, num_classes):
@@ -49,6 +50,7 @@ class Net(nn.Module):
 
     def loss(self, y_pred, y_true):
         return self.loss_fn(y_pred, y_true)
+
 
 net = Net(num_layers=5, hidden_size=28*28, num_classes=10)
 
@@ -87,11 +89,11 @@ for epoch in range(1):  # Add epochs for better training
         optimizer.step()
 
         total_loss += loss.item()
-        
+
         if batch_idx % 100 == 0:
             print(f'Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}')
             print('rank', args.rank, 'step', batch_idx, 'loss', loss.item())
-    
+
     avg_loss = total_loss / len(train_loader)
     print(f'Epoch {epoch} completed. Average loss: {avg_loss:.4f}')
 

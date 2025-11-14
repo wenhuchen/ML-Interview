@@ -9,9 +9,7 @@ import time
 import tiktoken
 import torch
 import torch.nn as nn
-import torch
-import math
-from problem16 import *
+from problem16 import MultiHeadAttention, LayerNorm, GPTModel
 
 
 class MoEFeedForward(nn.Module):
@@ -155,6 +153,7 @@ def generate_text_simple_cached(model, idx, max_new_tokens,
 
     return idx
 
+
 def encode_batch_left_pad(texts, tokenizer, max_length=None, pad_token_id=50256):
     """Left padding for efficient generation"""
     encoded_texts = [tokenizer.encode(text) for text in texts]
@@ -162,16 +161,14 @@ def encode_batch_left_pad(texts, tokenizer, max_length=None, pad_token_id=50256)
 
     if max_length is None:
         max_length = max(len(seq) for seq in encoded_texts)
-    
     batch_size = len(texts)
     batch_tensor = torch.full((batch_size, max_length), pad_token_id, dtype=torch.long, device=device)
-    
     for i, seq in enumerate(encoded_texts):
         seq_len = len(seq)
         start_idx = max_length - seq_len  # Start from the right
         batch_tensor[i, start_idx:] = torch.tensor(seq, device=device)
-    
     return batch_tensor
+
 
 def main():
     GPT_CONFIG_124M = {

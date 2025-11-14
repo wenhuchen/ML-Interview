@@ -4,7 +4,6 @@ RLHF with an explicit value head (actor-critic).
 Extends the Transformer with a value network for baseline estimation and
 optimizes on toy preference data with PPO-style objectives.
 """
-from math import log
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -17,7 +16,7 @@ from problem5 import Transformer
 
 # Reuse reward model utilities and toy preference data
 from problem12 import RewardModel, encode_batch_left_pad, pairs
-from torch.nn.utils.rnn import pad_sequence;
+from torch.nn.utils.rnn import pad_sequence
 
 
 class Transformer_with_value_network(Transformer):

@@ -33,6 +33,7 @@ def k1_divergence(samples, q_mu, q_sigma, p_mu, p_sigma):
     p = gaussian_pdf(samples, mu=p_mu, sigma=p_sigma)
     return np.mean(np.log(q / p))
 
+
 def k2_divergence(samples, q_mu, q_sigma, p_mu, p_sigma):
     """
     Estimate KL divergence using samples from Q
@@ -40,6 +41,7 @@ def k2_divergence(samples, q_mu, q_sigma, p_mu, p_sigma):
     q = gaussian_pdf(samples, mu=q_mu, sigma=q_sigma)
     p = gaussian_pdf(samples, mu=p_mu, sigma=p_sigma)
     return np.mean(1 / 2 * (np.log(q / p)**2))
+
 
 def k3_divergence(samples, q_mu, q_sigma, p_mu, p_sigma):
     """
@@ -49,17 +51,17 @@ def k3_divergence(samples, q_mu, q_sigma, p_mu, p_sigma):
     p = gaussian_pdf(samples, mu=p_mu, sigma=p_sigma)
     return np.mean((p / q - 1) - np.log(p / q))
 
-# Example usage
+
 if __name__ == "__main__":
     # Analytical KL divergence
     q_mu = 1.1
     q_sigma = 1.4
     p_mu = 0.2
     p_sigma = 1.2
-    
+
     kl = gaussian_kl_divergence(mu1=p_mu, sigma1=p_sigma, mu2=q_mu, sigma2=q_sigma)
     print(f"KL(N(0,1) || N(1,4)) = {kl:.6f}")
-    
+
     errors = [[], [], []]
     for _ in range(100):
         # Estimated KL using samples

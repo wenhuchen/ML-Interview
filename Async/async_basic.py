@@ -1,7 +1,4 @@
 import asyncio
-import time
-from concurrent.futures import ThreadPoolExecutor
-from threading import Thread
 
 """ 
 “await” is not a function
@@ -39,7 +36,7 @@ elif OPTION == 'B':
     async def main():
         t1 = asyncio.create_task(task("X", 3))
         t2 = asyncio.create_task(task("Y", 1))
-        
+
         print("Waiting for tasks...")
         await t2
         await t1

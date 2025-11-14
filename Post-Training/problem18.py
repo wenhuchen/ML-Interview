@@ -10,11 +10,12 @@ from typing import List
 import math
 import time
 
+
 class Node:
     def __init__(self, value: int):
         self.value = value
         self.connected = []
-    
+
     def add_connected(self, node: 'Node'):
         self.connected.append(node)
 
@@ -48,6 +49,7 @@ def base_case(nodes: List[int]) -> List[Node]:
                     return [nodes[1], nodes[2]]
             else:
                 return [nodes[1]]
+
 
 def find_singletons(nodes: List[Node], good_group: List[Node]) -> List[Node]:
     if not nodes:
